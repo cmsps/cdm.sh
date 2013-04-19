@@ -1,4 +1,5 @@
 #!/bin/sh
+## ## ## ## ## ## GitHub highlight hack
 #
 # cdm.sh -  `cd' command with menu
 #
