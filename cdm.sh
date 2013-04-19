@@ -2,7 +2,7 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Thu Apr 18 16:43:08 BST 2013
+# Fri Apr 19 13:58:18 BST 2013
 #
 
 
@@ -318,7 +318,7 @@ mkDirs(){
 
   # remove tree structure from dir list
   #
-  sed 's?^[| +`-][| +`-]*\.\/??' $TMP/prunedDirs >> "$dirList"
+  sed 's?^[| +`-][| +`-]*??' $TMP/prunedDirs >> "$dirList"
 
   # set label for root of tree
   #
