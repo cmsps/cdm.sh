@@ -1,9 +1,8 @@
 #!/bin/sh
-## ## ## ## ## ## GitHub highlight hack
 #
 # cdm.sh -  `cd' command with menu
 #
-# Fri Apr 19 13:58:18 BST 2013
+# Fri Apr 19 20:17:09 BST 2013
 #
 
 
