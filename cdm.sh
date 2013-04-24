@@ -2,7 +2,7 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Fri Apr 19 20:17:09 BST 2013
+# Wed Apr 24 13:51:14 BST 2013
 #
 
 
@@ -85,10 +85,10 @@ User-created overide files
    generated tree of sub-directories to be displayed.  An empty .cdmList,
    therefore, hides all the sub-directories.
 
-   .cdmList has one entry per line.  Three example .cdmList files:
+   .cdmList files have one entry per line.  Three example .cdmList files:
 
-        +-hilary                '-jill
-        +-dick                  +-jack                '-harry
+        +-hilary                +-jill
+        +-dick                  '-jack                '-harry
         | '-mehdi
         '-helena
 
