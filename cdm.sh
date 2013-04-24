@@ -2,7 +2,7 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Wed Apr 24 13:51:14 BST 2013
+# Wed Apr 24 14:02:18 BST 2013
 #
 
 
@@ -172,7 +172,7 @@ myLs(){
 
 
 # myTitlebar string - update window's title-bar
-#                     (you probably wish to delete or customise this)
+#                     (you can delete or customise this)
 #
 myTitlebar(){
   local string=$1
@@ -228,9 +228,6 @@ mkDirs(){
   fi
 
   # build tree of all possible directories
-  #                         adding a trailing slash (needed for appending)
-  #                         removing tree's escapes from spaces
-  #                         and condensing slightly
   #
   tree $hidden $skip -df --noreport |
 
