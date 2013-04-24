@@ -37,36 +37,36 @@ Quick start
    and you will see a menu for your current directory.
 
 
-User-created hidden files in $HOME/.cdm
-=======================================
+User-created files in $HOME/.cdm
+================================
 
-   There are two optional, user-created, hidden files in $HOME.  If $NAME
-   is cdm, they are called: .cdm/seed and .cdm/skip.  Both have one entry
-   per line.
+   cdm's configuration files are held in a hidden directory in $HOME.
+   If $NAME is cdm, the directory is $HOME/.cdm.  The user-created files
+   are called seed and skip; both have one entry per line.
 
-   .cdm/seed
-   ~~~~~~~~~
-      .cdm/seed contains a list of absolute path names; cdm adds them to
+   seed
+   ~~~~
+      seed contains a list of absolute path names; cdm adds them to
       the top of the menu.  Example .cdm/seed file:
 
       /installs
       /usr/local/bin
 
 
-   .cdm/skip
-   ~~~~~~~~~
-      .cdm/skip contains a list of ignored directory names.  These are
+   skip
+   ~~~~
+      skip contains a list of ignored directory names.  These are
       not pathnames.  Example .cdm/skip file:
 
       Bin
       SCCS
 
 
-Other hidden files in $HOME/.cdm
-================================
+Other files in $HOME/.cdm
+=========================
 
-   There are three automatically created, hidden files in $HOME/.cdm
-   called: menu, dirs and last.
+   There are three automatically created files in $HOME/.cdm called:
+   menu, dirs and last.
 
    .cdm/last holds a "cd" command to the last selected directory; it
    can be sourced in .bashrc so that new shells automatically start
@@ -87,9 +87,9 @@ User-created overide files
 
    .cdmList has one entry per line.  Three example .cdmList files:
 
-        +-tom                   +-jack                '-harry
         +-hilary                '-jill
-        | '-richard
+        +-dick                  +-jack                '-harry
+        | '-mehdi
         '-helena
 
 
