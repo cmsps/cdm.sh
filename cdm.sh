@@ -2,7 +2,7 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Wed Apr 24 14:02:18 BST 2013
+# Mon May 20 17:01:00 BST 2013
 #
 
 
@@ -237,18 +237,21 @@ mkDirs(){
   then # edit tree lines to: remove tree's escapes from spaces
        #                     and condense slightly
        sed 's?\\ ? ?g
-            s/   / /g
-            s/|-- /+-/g
-            s/`-- /`-/' > $TMP/prunedDirs
+            s/|-- /+-/
+            s/`-- /`-/
+            s/|   /| /g
+            s/    /  /g
+' > $TMP/prunedDirs
 
   else # edit tree lines to: add a trailing slash (needed for appending)
        #                     remove tree's escapes from spaces
        #                     and condense slightly
        sed 's?$?/?
             s?\\ ? ?g
-            s/   / /g
-            s/|-- /+-/g
-            s/`-- /`-/' > $TMP/allDirs
+            s/|-- /+-/
+            s/`-- /`-/
+            s/|   /| /g
+            s/    /  /g' > $TMP/allDirs
 
        # add  delete commands for contents of dirs with a .cdmList file
        #
