@@ -2,7 +2,7 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Mon May 20 17:01:00 BST 2013
+# Mon May 20 17:12:38 BST 2013
 #
 
 
@@ -240,8 +240,7 @@ mkDirs(){
             s/|-- /+-/
             s/`-- /`-/
             s/|   /| /g
-            s/    /  /g
-' > $TMP/prunedDirs
+            s/    /  /g' > $TMP/prunedDirs
 
   else # edit tree lines to: add a trailing slash (needed for appending)
        #                     remove tree's escapes from spaces
