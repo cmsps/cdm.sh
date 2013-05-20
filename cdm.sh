@@ -2,7 +2,7 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Mon May 20 17:12:38 BST 2013
+# Mon May 20 17:16:29 BST 2013
 #
 
 
@@ -197,7 +197,7 @@ usage(){
 	       -h   get hidden directories too
 	       -i   generate a temporary menu from "."    (implies -a and -t)
 	       -r   rebuild default menu
-	       -t   don't remember the choice
+	       -t   do not remember the choice
 	       -f   generate the calling function
 	!
   exit 1
