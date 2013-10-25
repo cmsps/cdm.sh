@@ -2,7 +2,7 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Mon May 20 17:16:29 BST 2013
+# Fri Sep 27 16:58:25 BST 2013
 #
 
 
@@ -209,7 +209,9 @@ usage(){
 #
 mkTmp(){
   trap 'rm -fr $TMP 2> /dev/null' 0 1 2 3 4 5 6 7 8 9 10    12 13 14 15
-  mkdir $TMP
+  mkdir $TMP && return
+  echo " $NAME: couldn't make $TMP directory"  >&2
+  exit 2
 }
 
 
@@ -368,8 +370,8 @@ doMenu(){
          fi
 
        printf '\nWhich? '
-       read reply || exit  2
-       test "$reply" || exit 3
+       read reply || exit 3
+       test "$reply" || exit 4
 
        # check for '-t ' at start of reply, treat as a '-t' option
        #
@@ -409,7 +411,7 @@ instruct(){
 	function defined.
 
 	!
-    exit 4
+    exit 5
 }
 
 
@@ -452,10 +454,11 @@ vetOptions(){
 
 
 # prevent the user giving the script a name with spaces in it
+# -- saving the hassle of quoting internal file names
 #
 case $0 in
      *' '*) echo "\`$0': I don't allow spaces in command names" >&2
-            exit 2
+            exit 6
 esac
 
 # set up particular programs used
@@ -527,7 +530,7 @@ doMenu > /dev/tty
 #
 case "$reply" in
      0)   echo "$NAME: $reply: too small" >&2
-          exit 5
+          exit 7
           ;;
      '(home)' | '(dot)' )
           choice=.
@@ -544,10 +547,10 @@ case "$reply" in
                1)   choice=`grep "$slash$reply"'$' "$dirList"`
                     ;;
                0)   echo "$NAME: $reply: not found" >&2
-                    exit 6
+                    exit 8
                     ;;
                *)   echo "$NAME: $reply: ambiguous" >&2
-                    exit 7
+                    exit 9
                     ;;
           esac
           ;;
@@ -556,7 +559,7 @@ case "$reply" in
           if [ "$reply" -le $entries ]
           then choice=`sed -n -e ${reply}p "$dirList"`
           else echo "$NAME: $reply: too big" >&2
-               exit 8
+               exit 10
           fi
           ;;
 esac
@@ -577,9 +580,9 @@ if [ ! -d "$choice" ]
 then echo "$NAME: $choice: no such directory" >&2
 else cd "$choice"
 
-     # if finding a .cdmList file here for the first time
+     # if there is a .cdmList file here and we need to offer the sub-dirs
      #
-     if [ -z "$call2" ] && [ -f "$LIST" ]
+     if [ -f "$LIST" ] && [ -z "$call2" ] && [ -z "$immediate" ]
      then
           # call myTitlebar if defined to put interim choice in title-bar
           #
