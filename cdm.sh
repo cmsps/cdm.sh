@@ -2,13 +2,13 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Fri Sep 27 16:58:25 BST 2013
+# Fri May 2 14:00:35 BST 2014
 #
 
 
 <<'______________D__O__C__U__M__E__N__T__A__T__I__O__N_____________'
 
-Copyright (C) 2013 Peter Scott - p.scott@shu.ac.uk
+Copyright (C) 2014 Peter Scott - p.scott@shu.ac.uk
 
 Licence
 =======
@@ -49,7 +49,7 @@ User-created files in $HOME/.cdm
       seed contains a list of absolute path names; cdm adds them to
       the top of the menu.  Example .cdm/seed file:
 
-      /installs
+      /etc
       /usr/local/bin
 
 
@@ -80,17 +80,19 @@ User-created overide files
    Files called .cdmList can exist in any directory; they overide how
    the directory is displayed by cdm.
 
-   If a .cdmList file exists in a directory, the file's contents are
-   used instead of the directory's contents.  .cdmList holds a manually
-   generated tree of sub-directories to be displayed.  An empty .cdmList,
-   therefore, hides all the sub-directories.
+   If a .cdmList file exists in a directory, the file's contents are used
+   instead of the directory's contents.  An empty .cdmList, therefore,
+   hides all the sub-directories.  Otherwise, .cdmList holds a manually
+   generated tree of sub-directories.
 
    .cdmList files have one entry per line.  Three example .cdmList files:
 
         +-hilary                +-jill
-        +-dick                  '-jack                '-harry
+        +-dick                  `-jack                '-harry
         | '-mehdi
-        '-helena
+        `-helena
+
+   (You can use "`" or "'", but not "!".)
 
 
 Installation
@@ -121,7 +123,8 @@ Main programs used
 
    tree:    does most of the tree drawing; it is readily available for Linux.
 
-   awk:     must allow user-defined functions.  GNU awk is fine.
+   awk:     must allow user-defined functions.  cdm uses gawk for Linux and
+            nawk otherwise.
 
 
 Problems
@@ -234,6 +237,7 @@ mkDirs(){
   tree $hidden $skip -df --noreport |
 
   # if not had -a option, build list of edits from user's customisation files
+  # otherwise, just build the tree without edits
   #
   if [ "$all" ]
   then # edit tree lines to: remove tree's escapes from spaces
@@ -254,50 +258,56 @@ mkDirs(){
             s/|   /| /g
             s/    /  /g' > $TMP/allDirs
 
-       # add  delete commands for contents of dirs with a .cdmList file
+       # start building edits; begin by adding delete commands for
+       # contents of dirs with a .cdmList file
        #
-       find . -name "$LIST" | sed 's/^/\\?[+`]-\\/
-                                   s/[^/]*$/.?d/' > $TMP/edits
+       find . -name "$LIST" |
+         sed 's/^/\\?[+`]-\\/
+              s/[^/]*$/.?d/' > $TMP/edits
 
        # add append commands for dirs with a non-empty .cdmList file
        #
        find . -name "$LIST" -size +1c |
          sed 's?/[^/]*$??' |          # remove ".cdmList"
 
-           # find dir's entry and display .cdmList, allowing for use of "'-"
+           # find dir's entry, output its name and display its .cdmList,
+           # (allowing for use of "'-" instead of "`-")
            #
-           xargs -I {} echo \
-             "grep -- '[+\`]-{}/$' $TMP/allDirs; tr \"'\" '\`' < {}/$LIST" |
-               sh |
-                 "$AWK" '# this for the +-./dir/ of the .cdmList file
-                         #
-                         /^[| ]*[+`]-\./ {
-                              if (savedLine)        
-                                   print( savedLine)
-                              savedLine = sprintf( "\\?%s$?a", $0)
-                              path = $0
-                              sub( /.*\.\//, "./", path)
-                              ind1 = $0
-                              if ($0 ~ /+-\.\//)
-                                   sub( /+-\.\/.*/, "| ", ind1)
-                              else
-                                   sub( /`-\.\/.*/, "  ", ind1)
-                         }
-                         # this is for the content of the .cdmList
-                         #
-                         !/^[| ]*[+`]-\./ {
-                              print( savedLine "\\")
-                              ind2 = $0
-                              sub( /[^| +`-]{2,}/, "", ind2)
-                              file = $0
-                              sub( /[| +`-]*/, "", file)
-                              savedLine = sprintf( "%s", ind1 ind2 path file)
-                         }
-                         END {
-                              if (savedLine)        
-                                   print( savedLine)
-                         }
-                 ' >> $TMP/edits
+           xargs -I {} echo "grep -- '[+\`]-{}/$' $TMP/allDirs; " \
+                                                   "tr \"'\" '\`' < {}/$LIST" |
+             sh |
+               "$AWK" ' \
+                 # do the +-./dir/ for the location of the non-empty .cdmList
+                 #
+                 /^[| ]*[+`]-\./ {
+                      if (savedLine)        
+                           print( savedLine)
+                      savedLine = sprintf( "\\?%s$?a", $0)
+                      path = $0
+                      sub( /.*\.\//, "./", path)
+                      indent1 = $0
+
+                      # if not last in parent dir
+                      #
+                      if ($0 ~ /+-\.\//)
+                           sub( /+-\.\/.*/, "| ", indent1)
+                      else
+                           sub( /`-\.\/.*/, "  ", indent1)
+                 }
+                 # do the lines in the .cdmList file
+                 #
+                 !/^[| ]*[+`]-\./ {
+                      print( savedLine "\\")
+                      dirStart = match($0, "[^| +`-]")
+                      indent2 = substr($0, 1, dirStart -1)
+                      dir = substr($0, dirStart)
+                      savedLine = sprintf( "%s", indent1 indent2 path dir)
+                 }
+                 END {
+                      if (savedLine)        
+                           print( savedLine)
+                 }
+               ' >> $TMP/edits
 
        # add command to remove the trailing slash added above
        #
@@ -453,21 +463,20 @@ vetOptions(){
 }
 
 
-# prevent the user giving the script a name with spaces in it
+# prevent the user giving the script a name with white space in it
 # -- saving the hassle of quoting internal file names
 #
-case $0 in
-     *' '*) echo "\`$0': I don't allow spaces in command names" >&2
-            exit 6
-esac
+words=`echo "$NAME" | wc -w`
+if [ $words -ne 1 ]
+then echo "\`$0': I don't allow white space in command names" >&2
+     exit 6
+fi
 
-# set up particular programs used
+# set up awk program to use
 #
 case $OSTYPE in
-     solaris*)
-          AWK=nawk ;;
-     linux-gnu)
-          AWK=gawk ;;
+     linux-gnu) AWK=gawk ;;
+     *)         AWK=nawk ;;
 esac
 
 # show installation function if '-f' is the only parameter
