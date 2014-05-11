@@ -2,7 +2,7 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Fri May 2 14:00:35 BST 2014
+# Sun May 11 12:58:41 BST 2014
 #
 
 
@@ -11,8 +11,7 @@
 Copyright (C) 2014 Peter Scott - p.scott@shu.ac.uk
 
 Licence
-=======
-
+-------
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
@@ -28,8 +27,7 @@ Licence
 
 
 Quick start
-===========
-
+-----------
    Type:
         $ eval `cdm.sh`
         $ ci
@@ -38,8 +36,7 @@ Quick start
 
 
 User-created files in $HOME/.cdm
-================================
-
+--------------------------------
    cdm's configuration files are held in a hidden directory in $HOME.
    If $NAME is cdm, the directory is $HOME/.cdm.  The user-created files
    are called seed and skip; both have one entry per line.
@@ -63,8 +60,7 @@ User-created files in $HOME/.cdm
 
 
 Other files in $HOME/.cdm
-=========================
-
+-------------------------
    There are three automatically created files in $HOME/.cdm called:
    menu, dirs and last.
 
@@ -75,8 +71,7 @@ Other files in $HOME/.cdm
 
 
 User-created overide files
-==========================
-
+--------------------------
    Files called .cdmList can exist in any directory; they overide how
    the directory is displayed by cdm.
 
@@ -87,17 +82,21 @@ User-created overide files
 
    .cdmList files have one entry per line.  Three example .cdmList files:
 
-        +-hilary                +-jill
-        +-dick                  `-jack                '-harry
-        | '-mehdi
+        +-hilary                +-jill                `-harry
+        +-dick                  '-jack
+        | +-mehdi
+        | | `-lisa
+        | |   `-doreen
+        | `-susan
         `-helena
 
-   (You can use "`" or "'", but not "!".)
+   (You can use "`-" or "'-" in the drawing.  The simplest way to generate
+   a tree is to run the tree command in the directory and edit the
+   output.)
 
 
 Installation
-============
-
+------------
   If you simply run cdm.sh, it displays installation instructions.
 
   You have to use:
@@ -111,16 +110,14 @@ Installation
 
 
 Terminals supported
-===================
-
+-------------------
   Terminals aren't explicitly supported.  I use cdm on xterms but I
   haven't yet found a terminal type where it doesn't work.  When $DISPLAY
   isn't set, cdm draws the menu tree with these characters: "|+'-".
 
 
 Main programs used
-==================
-
+------------------
    tree:    does most of the tree drawing; it is readily available for Linux.
 
    awk:     must allow user-defined functions.  cdm uses gawk for Linux and
@@ -128,13 +125,12 @@ Main programs used
 
 
 Problems
-========
+--------
+  (1) Directory names starting with '-' must be selected numerically.
+      They are hard to read as they merge with line drawing characters.
 
-  (1) Directory names starting in '-t ' (minus tee space) must be selected
-      numerically or on the command line.
-
-  (2) Names beginning with a minus are hard to read as they merge with
-      the line drawing characters.
+  (2) Names beginning with other line drawing characters or containing
+      slashes will probably mess things up.
 
   (3) Symbolic links are ignored.  This probably isn't a problem.
 
@@ -151,7 +147,8 @@ SKIP="$HOME/.$NAME/skip"
 MENU="$HOME/.$NAME/menu"
 DIRS="$HOME/.$NAME/dirs"
 LAST="$HOME/.$NAME/last"
-LIST=".${NAME}List"
+LIST=".cdmList"
+
 TMP="/tmp/$NAME.$$"
 
 # do not mess up these two constants by trying to paste the file
@@ -286,6 +283,7 @@ mkDirs(){
                       path = $0
                       sub( /.*\.\//, "./", path)
                       indent1 = $0
+                      i2PrevLen = 2
 
                       # if not last in parent dir
                       #
@@ -298,10 +296,20 @@ mkDirs(){
                  #
                  !/^[| ]*[+`]-\./ {
                       print( savedLine "\\")
-                      dirStart = match($0, "[^| +`-]")
+                      dirStart = match($0, "-") + 1
                       indent2 = substr($0, 1, dirStart -1)
+                      i2Len = length( indent2)
+                      if (i2Len > i2PrevLen) {       # assuming by 2!
+                           path = path prevDir "/"
+                      } else if (i2Len < i2PrevLen) {
+                           drops = (i2PrevLen - i2Len) / 2
+                           for (n = 0; n < drops; n++)
+                                sub( /[^/]+\/$/, "", path)
+                      }
                       dir = substr($0, dirStart)
                       savedLine = sprintf( "%s", indent1 indent2 path dir)
+                      prevDir = dir
+                      i2PrevLen = i2Len
                  }
                  END {
                       if (savedLine)        
@@ -339,7 +347,7 @@ mkDirs(){
   fi
 
   # remove full pathnames from menu, label tree root
-  # and convert tree commands's "`-" to "'-" (on aesthetic grounds)
+  # and convert tree commands's "`-" back to "'-" (looks better)
   #
   sed '\?^\.$?s??('$root')?
        \?/.*/?s?/.*/?/?
