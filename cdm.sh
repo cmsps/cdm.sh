@@ -2,7 +2,7 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Sun May 11 12:58:41 BST 2014
+# Thu May 29 13:42:38 BST 2014
 #
 
 
@@ -105,7 +105,7 @@ Installation
 
   The eval command will install functions called "cdm" and "ci" which
   both call cdm.sh and change directory.  The eval command should be
-  added to one of your shell's startup files (such as .bashrc) to ensure
+  added to one of your shell startup files (such as .bashrc) to ensure
   every shell you start gets the cdm and ci functions defined.
 
 
@@ -425,7 +425,7 @@ instruct(){
 
 	That will install a function called $NAME which calls $NAME.$EXT and
 	changes directory.  The eval statement should be added to one of your
-	shell's startup files to ensure every shell you start gets the $NAME
+	shell startup files to ensure every shell you start gets the $NAME
 	function defined.
 
 	!
