@@ -2,13 +2,13 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Thu May 29 13:42:38 BST 2014
+# Sun Jan 4 13:09:36 GMT 2015
 #
 
 
 <<'______________D__O__C__U__M__E__N__T__A__T__I__O__N_____________'
 
-Copyright (C) 2014 Peter Scott - p.scott@shu.ac.uk
+Copyright (C) 2015 Peter Scott - p.scott@shu.ac.uk
 
 Licence
 -------
@@ -93,6 +93,9 @@ User-created overide files
    (You can use "`-" or "'-" in the drawing.  The simplest way to generate
    a tree is to run the tree command in the directory and edit the
    output.)
+
+   The existence of a .cdmList file in a target directory causes cdm to
+   recurse and offer another menu.
 
 
 Installation
@@ -476,7 +479,7 @@ vetOptions(){
 #
 words=`echo "$NAME" | wc -w`
 if [ $words -ne 1 ]
-then echo "\`$0': I don't allow white space in command names" >&2
+then echo "\`$NAME': I don't allow white space in command names" >&2
      exit 6
 fi
 
@@ -601,12 +604,13 @@ else cd "$choice"
      #
      if [ -f "$LIST" ] && [ -z "$call2" ] && [ -z "$immediate" ]
      then
-          # call myTitlebar if defined to put interim choice in title-bar
+          # call myTitlebar, if defined, to put interim choice in title-bar
           #
           type myTitlebar &> /dev/null && myTitlebar "$choice"
 
           # re-call this script to refine choice
           #
+          noLs=true              # ls will have been done by the following call
           choice2=`$NAME.$EXT $NAME -i2`
           choice="$choice/$choice2"
      fi
@@ -617,9 +621,9 @@ else cd "$choice"
 
      test "$saveCd" && echo "cd '$choice'" > "$LAST"
 
-     # list target dir if not had second choice
+     # list target dir if not already done it for second choice
      #
-     if [ -z "$choice2" ]
+     if [ -z "$noLs" ]
      then
           # use "> /dev/tty" here because the script is run via
           # command substitution
