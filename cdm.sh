@@ -2,7 +2,7 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Sun Jan 4 13:09:36 GMT 2015
+# Wed Jan 7 13:33:42 GMT 2015
 #
 
 
@@ -142,7 +142,7 @@ ______________D__O__C__U__M__E__N__T__A__T__I__O__N_____________
 
 NAME='cdm'
 EXT='sh'
-PRE='CDM_'
+PREFIX='CDM_'
 ALIAS='ci'   # alias for cdm -i
 
 SEED="$HOME/.$NAME/seed"
@@ -150,7 +150,7 @@ SKIP="$HOME/.$NAME/skip"
 MENU="$HOME/.$NAME/menu"
 DIRS="$HOME/.$NAME/dirs"
 LAST="$HOME/.$NAME/last"
-LIST=".cdmList"
+LIST=".${NAME}List"
 
 TMP="/tmp/$NAME.$$"
 
@@ -383,7 +383,7 @@ doMenu(){
          #
          if [ -z "$DISPLAY" ]
          then
-            cat
+              cat
          else
               sed -e "/|/s//${START_LINEMODE}x${END_LINEMODE}/g" \
                   -e "/+-/s//${START_LINEMODE}tq${END_LINEMODE}/g" \
@@ -394,13 +394,12 @@ doMenu(){
        read reply || exit 3
        test "$reply" || exit 4
 
-       # check for '-t ' at start of reply, treat as a '-t' option
+       # accept    '-t ' option at start of reply
        #
        case "$reply" in
-            -t' '* )
-                 reply=`echo $reply | sed 's/-t  *//'`
-                 saveCd=
-                 ;;
+         -t' '* )
+            reply=`echo $reply | sed 's/-t  *//'`
+            saveCd=
        esac
 
   fi
@@ -412,7 +411,7 @@ doMenu(){
 showFunction(){
   printf 'function %s() { %s -i $*; };\n' $ALIAS $NAME
   printf 'function %s() { %s=`%s %s $*` && cd "$%s"; }\n' \
-                                     $NAME ${PRE}DIR $NAME.$EXT $NAME ${PRE}DIR
+                               $NAME ${PREFIX}DIR $NAME.$EXT $NAME ${PREFIX}DIR
   exit 0
 }
 
@@ -441,8 +440,8 @@ instruct(){
 badOpt(){
   option=$1
   case $option in
-       f)   echo "$NAME: -f must be used with eval" >&2 ;;
-       *)   echo "$NAME: bad option -- $option" >&2 ;;
+    f) echo "$NAME: -f must be used with eval" >&2 ;;
+    *) echo "$NAME: bad option -- $option" >&2
  esac
  usage
 }
@@ -486,8 +485,8 @@ fi
 # set up awk program to use
 #
 case $OSTYPE in
-     linux-gnu) AWK=gawk ;;
-     *)         AWK=nawk ;;
+  linux-gnu) AWK=gawk ;;
+  *)         AWK=nawk
 esac
 
 # show installation function if '-f' is the only parameter
@@ -514,13 +513,13 @@ saveCd=true
 #
 while getopts ':ahirt2' option
 do   case $option in
-         '?')   badOpt "$OPTARG" ;;
-          a )   all=true ;;
-          h )   hidden='-a' ;;      # option to tree command
-          i )   immediate=true ;;
-          r )   build=true ;;
-          t )   saveCd= ;;
-          2 )   call2=true ;;       # -2 is for internal use, but is harmless
+       '?') badOpt "$OPTARG" ;;
+        a ) all=true ;;
+        h ) hidden='-a' ;;      # option to tree command
+        i ) immediate=true ;;
+        r ) build=true ;;
+        t ) saveCd= ;;
+        2 ) call2=true ;;       # -2 is for internal use, but is harmless
      esac
 done
 shift $(($OPTIND - 1))
@@ -549,49 +548,44 @@ doMenu > /dev/tty
 # handle reply
 #
 case "$reply" in
-     0)   echo "$NAME: $reply: too small" >&2
-          exit 7
+  0) echo "$NAME: $reply: too small" >&2
+     exit 7
+     ;;
+  '(home)' | '(dot)' )
+     choice=.
+     ;;
+  *[!0-9]*)
+     case $reply in
+       /*) slash='' ;;
+       *)  slash='/'
+     esac
+     matches=`grep -c "$slash$reply"'$' "$dirList"`
+     case $matches in
+       1) choice=`grep "$slash$reply"'$' "$dirList"`
           ;;
-     '(home)' | '(dot)' )
-          choice=.
+       0) echo "$NAME: $reply: not found" >&2
+          exit 8
           ;;
-     *[!0-9]*)
-          case $reply in
-               /*)
-                    slash='' ;;
-               *)
-                    slash='/' ;;
-          esac
-          matches=`grep -c "$slash$reply"'$' "$dirList"`
-          case $matches in
-               1)   choice=`grep "$slash$reply"'$' "$dirList"`
-                    ;;
-               0)   echo "$NAME: $reply: not found" >&2
-                    exit 8
-                    ;;
-               *)   echo "$NAME: $reply: ambiguous" >&2
-                    exit 9
-                    ;;
-          esac
-          ;;
-     *)
-          entries=`wc -l < "$dirList"`
-          if [ "$reply" -le $entries ]
-          then choice=`sed -n -e ${reply}p "$dirList"`
-          else echo "$NAME: $reply: too big" >&2
-               exit 10
-          fi
-          ;;
+       *) echo "$NAME: $reply: ambiguous" >&2
+          exit 9
+     esac
+     ;;
+  *)
+     entries=`wc -l < "$dirList"`
+     if [ "$reply" -le $entries ]
+     then choice=`sed -n -e ${reply}p "$dirList"`
+     else echo "$NAME: $reply: too big" >&2
+          exit 10
+     fi
 esac
 
 # stick $HOME/ before choice if needed
 #
 case "$choice" in
-     /*)  :
-          ;;
-     *)   choice=`echo "$choice" | sed 's/^\.\///'`
-          test "$immediate" || choice="$HOME/$choice"
-          ;;
+  /*)
+     : ;;
+  *) choice=`echo "$choice" | sed 's/^\.\///'`
+     test "$immediate" || choice="$HOME/$choice"
 esac
 
 # cd to choice if it exists
