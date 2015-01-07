@@ -369,13 +369,14 @@ doMenu(){
        digits=`printf $entries | wc -c`
 
        # format menu with line numbers in up to three columns
+       # (This is aimed at a 24 line window.)
        #
        if [ $entries -le 22 ]
        then pr -t -n' '$digits -i' '1 "$menu"
        elif [ $entries -le 44 ]
-       then lines=$(( ($entries / 2) + ($entries % 2) ))
+       then lines=`expr \( $entries / 2 \) + \( $entries % 2 \)`
             pr -2 -t -l $lines -n' '$digits -w $COLUMNS -i' '1 "$menu"
-       else lines=$(( ($entries / 3) + ($entries % 3 + 1) / 2))
+       else lines=`expr \( $entries / 3 \) + \( $entries % 3 + 1 \) / 2`
             pr -3 -t -l $lines -n' '$digits -w $COLUMNS -i' '1 "$menu"
        fi |
 
@@ -522,7 +523,7 @@ do   case $option in
         2 ) call2=true ;;       # -2 is for internal use, but is harmless
      esac
 done
-shift $(($OPTIND - 1))
+shift `expr $OPTIND - 1`
 cmdLineChoice="$*"
 vetOptions
 
