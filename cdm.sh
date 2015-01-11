@@ -2,7 +2,7 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Wed Jan 7 13:33:42 GMT 2015
+# Sun Jan 11 22:46:56 GMT 2015
 #
 
 
@@ -29,7 +29,7 @@ Licence
 Quick start
 -----------
    Type:
-        $ eval `cdm.sh`
+        $ eval `cdm.sh -f`
         $ ci
 
    and you will see a menu for your current directory.
@@ -442,7 +442,7 @@ badOpt(){
   option=$1
   case $option in
     f) echo "$NAME: -f must be used with eval" >&2 ;;
-    *) echo "$NAME: bad option -- $option" >&2
+    *) echo "$NAME: bad option -- $option" >&2 ;;
  esac
  usage
 }
@@ -487,7 +487,7 @@ fi
 #
 case $OSTYPE in
   linux-gnu) AWK=gawk ;;
-  *)         AWK=nawk
+  *)         AWK=nawk ;;
 esac
 
 # show installation function if '-f' is the only parameter
@@ -542,23 +542,24 @@ then test "$build" && cd
      mkDirs
 fi
 
-# use "> /dev/tty" here because the script is run via command substitution
+# use "> /dev/tty" here because cdm.sh is run via command substitution
 #
 doMenu > /dev/tty
 
 # handle reply
 #
 case "$reply" in
-  0) echo "$NAME: $reply: too small" >&2
+  0)
+     echo "$NAME: $reply: too small" >&2
      exit 7
      ;;
-  '(home)' | '(dot)' )
+  '(home)' | '(dot)')
      choice=.
      ;;
   *[!0-9]*)
      case $reply in
        /*) slash='' ;;
-       *)  slash='/'
+       *)  slash='/' ;;
      esac
      matches=`grep -c "$slash$reply"'$' "$dirList"`
      case $matches in
@@ -585,7 +586,8 @@ esac
 case "$choice" in
   /*)
      : ;;
-  *) choice=`echo "$choice" | sed 's/^\.\///'`
+  *)
+     choice=`echo "$choice" | sed 's/^\.\///'`
      test "$immediate" || choice="$HOME/$choice"
 esac
 
