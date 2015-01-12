@@ -2,7 +2,7 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Sun Jan 11 22:46:56 GMT 2015
+# Mon Jan 12 12:59:59 GMT 2015
 #
 
 
@@ -514,13 +514,13 @@ saveCd=true
 #
 while getopts ':ahirt2' option
 do   case $option in
-       '?') badOpt "$OPTARG" ;;
-        a ) all=true ;;
-        h ) hidden='-a' ;;      # option to tree command
-        i ) immediate=true ;;
-        r ) build=true ;;
-        t ) saveCd= ;;
-        2 ) call2=true ;;       # -2 is for internal use, but is harmless
+       a) all=true ;;
+       h) hidden='-a' ;;      # option to tree command
+       i) immediate=true ;;
+       r) build=true ;;
+       t) saveCd= ;;
+       2) call2=true ;;       # -2 is for internal use, but is harmless
+      \?) badOpt "$OPTARG" ;;
      esac
 done
 shift `expr $OPTIND - 1`
