@@ -2,7 +2,7 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Mon Jan 12 12:59:59 GMT 2015
+# Sat Jan 17 15:47:37 GMT 2015
 #
 
 
@@ -76,7 +76,7 @@ User-created overide files
    the directory is displayed by cdm.
 
    If a .cdmList file exists in a directory, the file's contents are used
-   instead of the directory's contents.  An empty .cdmList, therefore,
+   instead of the directory's contents.  Therefore, an empty .cdmList simply
    hides all the sub-directories.  Otherwise, .cdmList holds a manually
    generated tree of sub-directories.
 
@@ -607,8 +607,13 @@ else cd "$choice"
 
           # re-call this script to refine choice
           #
-          noLs=true              # ls will have been done by the following call
           choice2=`$NAME.$EXT $NAME -i2`
+          if [ $? -ne 4 ]
+          then # ls will have been done by the above call, or there is an
+               # error message we don't want to mask
+               #
+               noLs=true
+          fi
           choice="$choice/$choice2"
      fi
 
