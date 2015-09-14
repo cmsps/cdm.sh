@@ -2,7 +2,7 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Sat Jan 17 15:47:37 GMT 2015
+# Tue May 12 16:57:52 BST 2015
 #
 
 
@@ -132,10 +132,13 @@ Problems
   (1) Directory names starting with '-' must be selected numerically.
       They are hard to read as they merge with line drawing characters.
 
-  (2) Names beginning with other line drawing characters or containing
+  (2) Directories whose name are numbers (eg: 2015) have to be chosen by
+      menu number.
+
+  (3) Names beginning with other line drawing characters or containing
       slashes will probably mess things up.
 
-  (3) Symbolic links are ignored.  This probably isn't a problem.
+  (4) Symbolic links are ignored.  This probably isn't a problem.
 
 
 ______________D__O__C__U__M__E__N__T__A__T__I__O__N_____________
