@@ -2,7 +2,7 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Tue May 12 16:57:52 BST 2015
+# Mon May 15 13:36:27 BST 2017
 #
 
 
@@ -167,11 +167,11 @@ END_LINEMODE='(B'
 # myLs - display the chosen directory (you probably wish to customise this)
 #
 myLs(){
-  echo "`pwd`/"                  # $PWD doesn't work fully in Solaris shell
+  echo "`pwd`/"                  # $PWD didn't work fully in Solaris shell
   echo "`pwd`/" | sed 's/./~/g'
   ls -F
-  if [ -d Bin ]
-  then printf "\nBin/\n"
+  if [ -d Bin ] ;then
+       printf "\nBin/\n"
        ls Bin
   fi
 }
@@ -179,7 +179,6 @@ myLs(){
 
 # myTitlebar string - update window's title-bar
 #                     (you can delete or customise this)
-#
 myTitlebar(){
   local string=$1
 
@@ -191,7 +190,7 @@ myTitlebar(){
 #
 usage(){
   cat <<-! >&2
-	Usage: $NAME [ -t ]         # select a directory from the menu
+Usage: $NAME [ -t ]         # select a directory from the menu
 	       $NAME [ -t ] choice  # select a directory without seeing a menu
 	       $NAME -i [ -h ]      # select from the current directory only
 	       $NAME -r [ -ah ]     # rebuild the menu
@@ -210,13 +209,18 @@ usage(){
 }
 
 
-# mkTmp - make temp dir and delete it automatically on exit
+# mkTmp - make temp dir and delete it automatically on exit or failure
 #         Eg: mkTmp; ... > $TMP/temp
 #
 mkTmp(){
-  trap 'rm -fr $TMP 2> /dev/null' 0 1 2 3 4 5 6 7 8 9 10    12 13 14 15
+  TMP=/tmp/$NAME.$$
+
+  # Beware of exit from a subshell and losing exit code
+  #
+  trap 'code=$?; rm -fr $TMP 2> /dev/null; exit $code' \
+                                   HUP INT QUIT ILL ABRT BUS FPE SEGV PIPE TERM
   mkdir $TMP && return
-  echo " $NAME: couldn't make $TMP directory"  >&2
+  echo "$NAME: couldn't make \`$TMP' directory" >&2
   exit 2
 }
 
@@ -227,10 +231,10 @@ mkDirs(){
 
   mkTmp
 
-  # Build argument of dirs for tree command to skip 
+  # Build argument of dirs for tree command to skip
   #
-  if [ \( "$call2" \) -o \( -z "$all" \) ] && [ -f "$SKIP" ]
-  then skip=$(tr '\n' '|' < "$SKIP" |
+  if [ \( "$call2" \) -o \( -z "$all" \) ] && [ -f "$SKIP" ] ;then
+       skip=$(tr '\n' '|' < "$SKIP" |
                 sed 's/^/-I /
                      s/.$//')
   fi
@@ -242,8 +246,8 @@ mkDirs(){
   # if not had -a option, build list of edits from user's customisation files
   # otherwise, just build the tree without edits
   #
-  if [ "$all" ]
-  then # edit tree lines to: remove tree's escapes from spaces
+  if [ "$all" ] ;then
+       # edit tree lines to: remove tree's escapes from spaces
        #                     and condense slightly
        sed 's?\\ ? ?g
             s/|-- /+-/
@@ -283,7 +287,7 @@ mkDirs(){
                  # do the +-./dir/ for the location of the non-empty .cdmList
                  #
                  /^[| ]*[+`]-\./ {
-                      if (savedLine)        
+                      if (savedLine)
                            print( savedLine)
                       savedLine = sprintf( "\\?%s$?a", $0)
                       path = $0
@@ -318,7 +322,7 @@ mkDirs(){
                       i2PrevLen = i2Len
                  }
                  END {
-                      if (savedLine)        
+                      if (savedLine)
                            print( savedLine)
                  }
                ' >> $TMP/edits
@@ -336,8 +340,8 @@ mkDirs(){
   #
   > "$dirList"
   > "$menu"
-  if [ -z "$immediate" ] && [ -f "$SEED" ]
-  then cat "$SEED" >> "$dirList"
+  if [ -z "$immediate" ] && [ -f "$SEED" ] ;then
+       cat "$SEED" >> "$dirList"
        cat "$SEED" >> "$menu"
   fi
 
@@ -347,9 +351,10 @@ mkDirs(){
 
   # set label for root of tree
   #
-  if [ "$immediate" ]
-  then root=dot
-  else root=home
+  if [ "$immediate" ] ;then
+       root=dot
+  else
+       root=home
   fi
 
   # remove full pathnames from menu, label tree root
@@ -365,28 +370,29 @@ mkDirs(){
 # doMenu - show menu (if needed) and get reply
 #
 doMenu(){
-  if [ "$cmdLineChoice" ]
-  then reply=$cmdLineChoice
-  else test "$COLUMNS" || COLUMNS=80
+  if [ "$cmdLineChoice" ] ;then
+       reply=$cmdLineChoice
+  else
+       test "$COLUMNS" || COLUMNS=80
        entries=`wc -l < "$menu"`
        digits=`printf $entries | wc -c`
 
        # format menu with line numbers in up to three columns
        # (This is aimed at a 24 line window.)
        #
-       if [ $entries -le 22 ]
-       then pr -t -n' '$digits -i' '1 "$menu"
-       elif [ $entries -le 44 ]
-       then lines=`expr \( $entries / 2 \) + \( $entries % 2 \)`
+       if [ $entries -le 22 ] ;then
+            pr -t -n' '$digits -i' '1 "$menu"
+       elif [ $entries -le 44 ] ;then
+            lines=`expr \( $entries / 2 \) + \( $entries % 2 \)`
             pr -2 -t -l $lines -n' '$digits -w $COLUMNS -i' '1 "$menu"
-       else lines=`expr \( $entries / 3 \) + \( $entries % 3 + 1 \) / 2`
+       else
+            lines=`expr \( $entries / 3 \) + \( $entries % 3 + 1 \) / 2`
             pr -3 -t -l $lines -n' '$digits -w $COLUMNS -i' '1 "$menu"
        fi |
 
          # use line-drawing if using an xterm equivalent
          #
-         if [ -z "$DISPLAY" ]
-         then
+         if [ -z "$DISPLAY" ] ;then
               cat
          else
               sed -e "/|/s//${START_LINEMODE}x${END_LINEMODE}/g" \
@@ -403,7 +409,7 @@ doMenu(){
        case "$reply" in
          -t' '* )
             reply=`echo $reply | sed 's/-t  *//'`
-            saveCd=
+            saveCd= ;;
        esac
 
   fi
@@ -413,8 +419,8 @@ doMenu(){
 # showFunction - show function definitions for eval by shell startup script
 #
 showFunction(){
-  printf 'function %s() { %s -i $*; };\n' $ALIAS $NAME
-  printf 'function %s() { %s=`%s %s $*` && cd "$%s"; }\n' \
+  printf 'function %s(){ %s -i $*; };\n' $ALIAS $NAME
+  printf 'function %s(){ %s=`%s %s $*` && cd "$%s"; }\n' \
                                $NAME ${PREFIX}DIR $NAME.$EXT $NAME ${PREFIX}DIR
   exit 0
 }
@@ -445,7 +451,7 @@ badOpt(){
   option=$1
   case $option in
     f) echo "$NAME: -f must be used with eval" >&2 ;;
-    *) echo "$NAME: bad option -- $option" >&2 ;;
+    *) echo "$NAME: bad option -- $option" >&2
  esac
  usage
 }
@@ -454,21 +460,21 @@ badOpt(){
 # vetOptions - check mutually exclusive options and set up implied options
 #
 vetOptions(){
-  if [ "$immediate" ] && [ "$build" ]
-  then echo "$NAME: warning: ignoring -r with -i" >&2
+  if [ "$immediate" ] && [ "$build" ] ;then
+       echo "$NAME: warning: ignoring -r with -i" >&2
   fi
-  if [ "$immediate" ] && [ "$all" ]
-  then echo "$NAME: warning: -i implies -a" >&2
+  if [ "$immediate" ] && [ "$all" ] ;then
+       echo "$NAME: warning: -i implies -a" >&2
        all=
   fi
-  if [ "$all" ] && [ -z "$build" ]
-  then echo "$NAME: warning: ignoring -a without -r" >&2
+  if [ "$all" ] && [ -z "$build" ] ;then
+       echo "$NAME: warning: ignoring -a without -r" >&2
   fi
-  if [ "$hidden" ] && [ -z "$build" ] && [ -z "$immediate" ]
-  then echo "$NAME: warning: ignoring -h without -i or -r" >&2
+  if [ "$hidden" ] && [ -z "$build" ] && [ -z "$immediate" ] ;then
+       echo "$NAME: warning: ignoring -h without -i or -r" >&2
   fi
-  if [ "$immediate" ]
-  then saveCd=         # -i implies: -t
+  if [ "$immediate" ] ;then
+       saveCd=         # -i implies: -t
        build=          # -i implies: no -r
        all=true        # -i implies: -a
        menu=$TMP/menu
@@ -481,8 +487,8 @@ vetOptions(){
 # -- saving the hassle of quoting internal file names
 #
 words=`echo "$NAME" | wc -w`
-if [ $words -ne 1 ]
-then echo "\`$NAME': I don't allow white space in command names" >&2
+if [ $words -ne 1 ] ;then
+     echo "\`$NAME': I don't allow white space in command names" >&2
      exit 6
 fi
 
@@ -490,15 +496,16 @@ fi
 #
 case $OSTYPE in
   linux-gnu) AWK=gawk ;;
-  *)         AWK=nawk ;;
+  *)         AWK=nawk
 esac
 
 # show installation function if '-f' is the only parameter
 #
-if [ "$1" = -f ]
-then if [ $# -eq 1 ]
-     then showFunction    # exits
-     else usage
+if [ "$1" = -f ] ;then
+     if [ $# -eq 1 ] ;then
+          showFunction    # exits
+     else
+          usage
      fi
 fi
 
@@ -515,8 +522,8 @@ saveCd=true
 
 # handle remaining options
 #
-while getopts ':ahirt2' option
-do   case $option in
+while getopts ':ahirt2' option ;do
+     case $option in
        a) all=true ;;
        h) hidden='-a' ;;      # option to tree command
        i) immediate=true ;;
@@ -533,15 +540,15 @@ vetOptions
 # cause menu to be built menu if first run
 #
 test -d "$HOME/.$NAME" || mkdir "$HOME/.$NAME"
-if [ ! -f "$menu" ] && [ -z "$immediate" ] && [ -z "$build" ]
-then echo "$NAME: $menu: not found, building it ..." >&2
+if [ ! -f "$menu" ] && [ -z "$immediate" ] && [ -z "$build" ] ;then
+     echo "$NAME: $menu: not found, building it ..." >&2
      build=true
 fi
 
 #  build menu if needed (in $HOME if not '-i')
 #
-if [ "$immediate" ] || [ "$build" ]
-then test "$build" && cd
+if [ "$immediate" ] || [ "$build" ] ;then
+     test "$build" && cd
      mkDirs
 fi
 
@@ -562,7 +569,7 @@ case "$reply" in
   *[!0-9]*)
      case $reply in
        /*) slash='' ;;
-       *)  slash='/' ;;
+       *)  slash='/'
      esac
      matches=`grep -c "$slash$reply"'$' "$dirList"`
      case $matches in
@@ -577,9 +584,10 @@ case "$reply" in
      ;;
   *)
      entries=`wc -l < "$dirList"`
-     if [ "$reply" -le $entries ]
-     then choice=`sed -n -e ${reply}p "$dirList"`
-     else echo "$NAME: $reply: too big" >&2
+     if [ "$reply" -le $entries ] ;then
+          choice=`sed -n -e ${reply}p "$dirList"`
+     else
+          echo "$NAME: $reply: too big" >&2
           exit 10
      fi
 esac
@@ -596,14 +604,15 @@ esac
 
 # cd to choice if it exists
 #
-if [ ! -d "$choice" ]
-then echo "$NAME: $choice: no such directory" >&2
-else cd "$choice"
+if [ ! -d "$choice" ] ;then
+     echo "$NAME: $choice: no such directory" >&2
+else
+     cd "$choice"
 
      # if there is a .cdmList file here and we need to offer the sub-dirs
      #
-     if [ -f "$LIST" ] && [ -z "$call2" ] && [ -z "$immediate" ]
-     then
+     if [ -f "$LIST" ] && [ -z "$call2" ] && [ -z "$immediate" ] ;then
+
           # call myTitlebar, if defined, to put interim choice in title-bar
           #
           type myTitlebar &> /dev/null && myTitlebar "$choice"
@@ -611,8 +620,8 @@ else cd "$choice"
           # re-call this script to refine choice
           #
           choice2=`$NAME.$EXT $NAME -i2`
-          if [ $? -ne 4 ]
-          then # ls will have been done by the above call, or there is an
+          if [ $? -ne 4 ] ;then
+               # ls will have been done by the above call, or there is an
                # error message we don't want to mask
                #
                noLs=true
@@ -628,8 +637,8 @@ else cd "$choice"
 
      # list target dir if not already done it for second choice
      #
-     if [ -z "$noLs" ]
-     then
+     if [ -z "$noLs" ] ;then
+
           # use "> /dev/tty" here because the script is run via
           # command substitution
           #
