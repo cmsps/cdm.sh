@@ -2,7 +2,7 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Mon May 15 13:36:27 BST 2017
+# Sun May 21 20:12:27 BST 2017
 #
 
 
@@ -218,7 +218,7 @@ mkTmp(){
   # Beware of exit from a subshell and losing exit code
   #
   trap 'code=$?; rm -fr $TMP 2> /dev/null; exit $code' \
-                                   HUP INT QUIT ILL ABRT BUS FPE SEGV PIPE TERM
+                              EXIT HUP INT QUIT ILL ABRT BUS FPE SEGV PIPE TERM
   mkdir $TMP && return
   echo "$NAME: couldn't make \`$TMP' directory" >&2
   exit 2
