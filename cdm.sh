@@ -2,7 +2,7 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Sun May 21 20:12:27 BST 2017
+# Sat Sep 9 07:56:55 BST 2017
 #
 
 
@@ -132,7 +132,7 @@ Problems
   (1) Directory names starting with '-' must be selected numerically.
       They are hard to read as they merge with line drawing characters.
 
-  (2) Directories whose name are numbers (eg: 2015) have to be chosen by
+  (2) Directories whose name is a number (eg: 2015) have to be chosen by
       menu number.
 
   (3) Names beginning with other line drawing characters or containing
@@ -233,7 +233,7 @@ mkDirs(){
 
   # Build argument of dirs for tree command to skip
   #
-  if [ \( "$call2" \) -o \( -z "$all" \) ] && [ -f "$SKIP" ] ;then
+  if [ \( "$call2" \) -o \( ! "$all" \) ] && [ -f "$SKIP" ] ;then
        skip=$(tr '\n' '|' < "$SKIP" |
                 sed 's/^/-I /
                      s/.$//')
@@ -340,7 +340,7 @@ mkDirs(){
   #
   > "$dirList"
   > "$menu"
-  if [ -z "$immediate" ] && [ -f "$SEED" ] ;then
+  if [ ! "$immediate" ] && [ -f "$SEED" ] ;then
        cat "$SEED" >> "$dirList"
        cat "$SEED" >> "$menu"
   fi
@@ -367,14 +367,18 @@ mkDirs(){
 }
 
 
-# doMenu - show menu (if needed) and get reply
+# doMenu - show menu (if needed) and get reply (if needed)
 #
 doMenu(){
+  entries=`wc -l < "$menu"`
   if [ "$cmdLineChoice" ] ;then
        reply=$cmdLineChoice
+  elif [ $entries -eq 1 ] ;then
+       reply=1
+       test "$immediate" && \
+           echo "$NAME: warning: only one directory to choose" >&2
   else
        test "$COLUMNS" || COLUMNS=80
-       entries=`wc -l < "$menu"`
        digits=`printf $entries | wc -c`
 
        # format menu with line numbers in up to three columns
@@ -392,7 +396,7 @@ doMenu(){
 
          # use line-drawing if using an xterm equivalent
          #
-         if [ -z "$DISPLAY" ] ;then
+         if [ ! "$DISPLAY" ] ;then
               cat
          else
               sed -e "/|/s//${START_LINEMODE}x${END_LINEMODE}/g" \
@@ -467,10 +471,10 @@ vetOptions(){
        echo "$NAME: warning: -i implies -a" >&2
        all=
   fi
-  if [ "$all" ] && [ -z "$build" ] ;then
+  if [ "$all" ] && [ ! "$build" ] ;then
        echo "$NAME: warning: ignoring -a without -r" >&2
   fi
-  if [ "$hidden" ] && [ -z "$build" ] && [ -z "$immediate" ] ;then
+  if [ "$hidden" ] && [ ! "$build" ] && [ ! "$immediate" ] ;then
        echo "$NAME: warning: ignoring -h without -i or -r" >&2
   fi
   if [ "$immediate" ] ;then
@@ -540,7 +544,7 @@ vetOptions
 # cause menu to be built menu if first run
 #
 test -d "$HOME/.$NAME" || mkdir "$HOME/.$NAME"
-if [ ! -f "$menu" ] && [ -z "$immediate" ] && [ -z "$build" ] ;then
+if [ ! -f "$menu" ] && [ ! "$immediate" ] && [ ! "$build" ] ;then
      echo "$NAME: $menu: not found, building it ..." >&2
      build=true
 fi
@@ -583,7 +587,6 @@ case "$reply" in
      esac
      ;;
   *)
-     entries=`wc -l < "$dirList"`
      if [ "$reply" -le $entries ] ;then
           choice=`sed -n -e ${reply}p "$dirList"`
      else
@@ -609,9 +612,9 @@ if [ ! -d "$choice" ] ;then
 else
      cd "$choice"
 
-     # if there is a .cdmList file here and we need to offer the sub-dirs
+     # offer the sub-directories if there is a .cdmList file here
      #
-     if [ -f "$LIST" ] && [ -z "$call2" ] && [ -z "$immediate" ] ;then
+     if [ -f "$LIST" ] && [ ! "$call2" ] && [ ! "$immediate" ] ;then
 
           # call myTitlebar, if defined, to put interim choice in title-bar
           #
@@ -637,7 +640,7 @@ else
 
      # list target dir if not already done it for second choice
      #
-     if [ -z "$noLs" ] ;then
+     if [ ! "$noLs" ] ;then
 
           # use "> /dev/tty" here because the script is run via
           # command substitution
