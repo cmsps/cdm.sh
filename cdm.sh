@@ -2,13 +2,13 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Sat Sep 9 07:56:55 BST 2017
+# Tue Jan 1 17:28:52 GMT 2019
 #
 
 
 <<'______________D__O__C__U__M__E__N__T__A__T__I__O__N_____________'
 
-Copyright (C) 2018 Peter Scott - peterscott@pobox.com
+Copyright (C) 2019 Peter Scott - peterscott@pobox.com
 
 Licence
 -------
@@ -169,7 +169,7 @@ END_LINEMODE='(B'
 myLs(){
   echo "`pwd`/"                  # $PWD didn't work fully in Solaris shell
   echo "`pwd`/" | sed 's/./~/g'
-  ls -F
+  ls -FN
   if [ -d Bin ] ;then
        printf "\nBin/\n"
        ls Bin
@@ -194,16 +194,16 @@ Usage: $NAME [ -t ]         # select a directory from the menu
 	       $NAME [ -t ] choice  # select a directory without seeing a menu
 	       $NAME -i [ -h ]      # select from the current directory only
 	       $NAME -r [ -ah ]     # rebuild the menu
-	       eval \`$NAME.$EXT -f\`   # install the calling function in the shell
+	       eval \`$NAME.$EXT -f\`   # add the calling functions to the shell
 
 	Options:
 	       -a   get all directories by ignoring $SKIP
 	            and any $LIST files
+	       -f   generate the calling function
 	       -h   get hidden directories too
 	       -i   generate a temporary menu from "."    (implies -a and -t)
 	       -r   rebuild default menu
-	       -t   do not remember the choice
-	       -f   generate the calling function
+	       -t   do not remember the chosen directory
 	!
   exit 1
 }
@@ -212,13 +212,13 @@ Usage: $NAME [ -t ]         # select a directory from the menu
 # mkTmp - make temp dir and delete it automatically on exit or failure
 #         Eg: mkTmp; ... > $TMP/temp
 #
+# Be careful not to exit from a subshell and lose an exit code!
+# -------------------------------------------------------------
+#
 mkTmp(){
   TMP=/tmp/$NAME.$$
 
-  # Beware of exit from a subshell and losing exit code
-  #
-  trap 'code=$?; rm -fr $TMP 2> /dev/null; exit $code' \
-                              EXIT HUP INT QUIT ILL ABRT BUS FPE SEGV PIPE TERM
+  trap 'code=$?; rm -fr $TMP 2> /dev/null; exit $code' EXIT HUP INT QUIT TERM
   mkdir $TMP && return
   echo "$NAME: couldn't make \`$TMP' directory" >&2
   exit 2
@@ -454,7 +454,7 @@ instruct(){
 badOpt(){
   option=$1
   case $option in
-    f) echo "$NAME: -f must be used with eval" >&2 ;;
+    f) echo "$NAME: -f must be used with eval and '.$EXT'" >&2 ;;
     *) echo "$NAME: bad option -- $option" >&2
  esac
  usage
