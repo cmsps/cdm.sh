@@ -2,13 +2,13 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Tue Jan 1 17:28:52 GMT 2019
+# Wed Nov 6 18:33:06 GMT 2019
 #
 
 
 <<'______________D__O__C__U__M__E__N__T__A__T__I__O__N_____________'
 
-Copyright (C) 2019 Peter Scott - peterscott@pobox.com
+Copyright (C) 2020 Peter Scott - peterscott@pobox.com
 
 Licence
 -------
@@ -190,18 +190,20 @@ myTitlebar(){
 #
 usage(){
   cat <<-! >&2
-Usage: $NAME [ -t ]         # select a directory from the menu
+	Usage: $NAME [ -t ]         # select a directory from the menu
 	       $NAME [ -t ] choice  # select a directory without seeing a menu
-	       $NAME -i [ -h ]      # select from the current directory only
-	       $NAME -r [ -ah ]     # rebuild the menu
+	       $NAME -i [ -a ]      # select from the current directory only
+	       $NAME -r [ -Aa ]     # rebuild the menu
 	       eval \`$NAME.$EXT -f\`   # add the calling functions to the shell
 
 	Options:
-	       -a   get all directories by ignoring $SKIP
-	            and any $LIST files
+	       -A   include skipped directories by ignoring
+	               $SKIP and any $LIST files
+	       -a   include hidden directories
 	       -f   generate the calling function
-	       -h   get hidden directories too
-	       -i   generate a temporary menu from "."    (implies -a and -t)
+	       -h   display this help and exit
+	       -i   generate a temporary menu from the current directory
+	               (implies -A and -t)
 	       -r   rebuild default menu
 	       -t   do not remember the chosen directory
 	!
@@ -376,7 +378,7 @@ doMenu(){
   elif [ $entries -eq 1 ] ;then
        reply=1
        test "$immediate" && \
-           echo "$NAME: warning: only one directory to choose" >&2
+           echo "$NAME: warning: $LIST but no visible sub-directories" >&2
   else
        test "$COLUMNS" || COLUMNS=80
        digits=`printf $entries | wc -c`
@@ -468,19 +470,19 @@ vetOptions(){
        echo "$NAME: warning: ignoring -r with -i" >&2
   fi
   if [ "$immediate" ] && [ "$all" ] ;then
-       echo "$NAME: warning: -i implies -a" >&2
+       echo "$NAME: warning: -i implies -A" >&2
        all=
   fi
   if [ "$all" ] && [ ! "$build" ] ;then
-       echo "$NAME: warning: ignoring -a without -r" >&2
+       echo "$NAME: warning: ignoring -A without -r" >&2
   fi
   if [ "$hidden" ] && [ ! "$build" ] && [ ! "$immediate" ] ;then
-       echo "$NAME: warning: ignoring -h without -i or -r" >&2
+       echo "$NAME: warning: ignoring -a without -i or -r" >&2
   fi
   if [ "$immediate" ] ;then
        saveCd=         # -i implies: -t
        build=          # -i implies: no -r
-       all=true        # -i implies: -a
+       all=true        # -i implies: -A
        menu=$TMP/menu
        dirList=$TMP/dirList
   fi
@@ -526,10 +528,11 @@ saveCd=true
 
 # handle remaining options
 #
-while getopts ':ahirt2' option ;do
+while getopts ':Aahirt2' option ;do
      case $option in
-       a) all=true ;;
-       h) hidden='-a' ;;      # option to tree command
+       A) all=true ;;
+       a) hidden='-a' ;;      # option to tree command
+       h) usage ;;
        i) immediate=true ;;
        r) build=true ;;
        t) saveCd= ;;
