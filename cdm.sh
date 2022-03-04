@@ -2,7 +2,7 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Wed Nov 6 18:33:06 GMT 2019
+# Fri Mar 4 19:47:15 GMT 2022
 #
 
 
@@ -243,7 +243,7 @@ mkDirs(){
 
   # build tree of all possible directories
   #
-  tree $hidden $skip -df --noreport |
+  tree $hidden $skip -df --noreport --charset '' |
 
   # if not had -a option, build list of edits from user's customisation files
   # otherwise, just build the tree without edits
