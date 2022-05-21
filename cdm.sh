@@ -2,7 +2,7 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Fri Mar 4 19:47:15 GMT 2022
+# Sat May 21 19:54:16 BST 2022
 #
 
 
@@ -190,11 +190,11 @@ myTitlebar(){
 #
 usage(){
   cat <<-! >&2
-	Usage: $NAME [ -t ]         # select a directory from the menu
-	       $NAME [ -t ] choice  # select a directory without seeing a menu
-	       $NAME -i [ -a ]      # select from the current directory only
-	       $NAME -r [ -Aa ]     # rebuild the menu
-	       eval \`$NAME.$EXT -f\`   # add the calling functions to the shell
+	Usage: $NAME [-t]           select a directory from the menu
+	       $NAME [-t] choice    select a directory without seeing a menu
+	       $NAME -i [-a]        select from the current directory only
+	       $NAME -r [-Aa]       rebuild the menu
+	       eval \`$NAME.$EXT -f\`   add the calling functions to the shell
 
 	Options:
 	       -A   include skipped directories by ignoring
