@@ -2,7 +2,7 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Sat May 21 19:54:16 BST 2022
+# Sat Dec 10 17:44:58 GMT 2022
 #
 
 
@@ -123,8 +123,7 @@ Main programs used
 ------------------
    tree:    does most of the tree drawing; it is readily available for Linux.
 
-   awk:     must allow user-defined functions.  cdm uses gawk for Linux and
-            nawk otherwise.
+   awk:     must allow user-defined functions.
 
 
 Problems
@@ -154,8 +153,6 @@ MENU="$HOME/.$NAME/menu"
 DIRS="$HOME/.$NAME/dirs"
 LAST="$HOME/.$NAME/last"
 LIST=".${NAME}List"
-
-TMP="/tmp/$NAME.$$"
 
 # do not mess up these two constants by trying to paste the file
 # instead of downloading it
@@ -192,8 +189,9 @@ usage(){
   cat <<-! >&2
 	Usage: $NAME [-t]           select a directory from the menu
 	       $NAME [-t] choice    select a directory without seeing a menu
+	       $NAME [-t] ch1 ch2   select a directory without seeing two menus
 	       $NAME -i [-a]        select from the current directory only
-	       $NAME -r [-Aa]       rebuild the menu
+	       $NAME -r [-Aa]       rebuild the default menu
 	       eval \`$NAME.$EXT -f\`   add the calling functions to the shell
 
 	Options:
@@ -204,10 +202,10 @@ usage(){
 	       -h   display this help and exit
 	       -i   generate a temporary menu from the current directory
 	               (implies -A and -t)
-	       -r   rebuild default menu
+	       -r   rebuild the default menu
 	       -t   do not remember the chosen directory
 	!
-  exit 1
+  exit 2
 }
 
 
@@ -223,15 +221,13 @@ mkTmp(){
   trap 'code=$?; rm -fr $TMP 2> /dev/null; exit $code' EXIT HUP INT QUIT TERM
   mkdir $TMP && return
   echo "$NAME: couldn't make \`$TMP' directory" >&2
-  exit 2
+  exit 3
 }
 
 
 # mkDirs - re-build directory list and menu
 #
 mkDirs(){
-
-  mkTmp
 
   # Build argument of dirs for tree command to skip
   #
@@ -285,7 +281,7 @@ mkDirs(){
            xargs -I {} echo "grep -- '[+\`]-{}/$' $TMP/allDirs; " \
                                                    "tr \"'\" '\`' < {}/$LIST" |
              sh |
-               "$AWK" ' \
+               awk '
                  # do the +-./dir/ for the location of the non-empty .cdmList
                  #
                  /^[| ]*[+`]-\./ {
@@ -373,12 +369,10 @@ mkDirs(){
 #
 doMenu(){
   entries=`wc -l < "$menu"`
-  if [ "$cmdLineChoice" ] ;then
-       reply=$cmdLineChoice
+  if [ "$firstCmdLineChoice" ] ;then
+       reply="$firstCmdLineChoice"
   elif [ $entries -eq 1 ] ;then
        reply=1
-       test "$immediate" && \
-           echo "$NAME: warning: $LIST but no visible sub-directories" >&2
   else
        test "$COLUMNS" || COLUMNS=80
        digits=`printf $entries | wc -c`
@@ -407,8 +401,8 @@ doMenu(){
          fi
 
        printf '\nWhich? '
-       read reply || exit 3
-       test "$reply" || exit 4
+       read reply || exit 5
+       test "$reply" || exit 6
 
        # accept    '-t ' option at start of reply
        #
@@ -447,7 +441,7 @@ instruct(){
 	function defined.
 
 	!
-    exit 5
+    exit 7
 }
 
 
@@ -483,8 +477,6 @@ vetOptions(){
        saveCd=         # -i implies: -t
        build=          # -i implies: no -r
        all=true        # -i implies: -A
-       menu=$TMP/menu
-       dirList=$TMP/dirList
   fi
 }
 
@@ -495,15 +487,8 @@ vetOptions(){
 words=`echo "$NAME" | wc -w`
 if [ $words -ne 1 ] ;then
      echo "\`$NAME': I don't allow white space in command names" >&2
-     exit 6
+     exit 4
 fi
-
-# set up awk program to use
-#
-case $OSTYPE in
-  linux-gnu) AWK=gawk ;;
-  *)         AWK=nawk
-esac
 
 # show installation function if '-f' is the only parameter
 #
@@ -541,21 +526,35 @@ while getopts ':Aahirt2' option ;do
      esac
 done
 shift `expr $OPTIND - 1`
-cmdLineChoice="$*"
+case $# in
+  0) ;;
+  1) firstCmdLineChoice="$1"
+     ;;
+  2) firstCmdLineChoice="$1"
+     secondCmdLineChoice="$2"
+     ;;
+  *) usage
+esac
 vetOptions
 
-# cause menu to be built menu if first run
+# cause menu to be built if first run
 #
-test -d "$HOME/.$NAME" || mkdir "$HOME/.$NAME"
-if [ ! -f "$menu" ] && [ ! "$immediate" ] && [ ! "$build" ] ;then
+if [ ! -d "$HOME/.$NAME" ] ;then
+     mkdir "$HOME/.$NAME"
      echo "$NAME: $menu: not found, building it ..." >&2
      build=true
 fi
 
-#  build menu if needed (in $HOME if not '-i')
+#  build menu if needed
 #
-if [ "$immediate" ] || [ "$build" ] ;then
-     test "$build" && cd
+if [ "$build" ] ;then
+     cd
+     mkTmp
+     mkDirs
+elif [ "$immediate" ] ;then
+     mkTmp
+     menu=$TMP/menu
+     dirList=$TMP/dirList
      mkDirs
 fi
 
@@ -568,7 +567,7 @@ doMenu > /dev/tty
 case "$reply" in
   0)
      echo "$NAME: $reply: too small" >&2
-     exit 7
+     exit 8
      ;;
   '(home)' | '(dot)')
      choice=.
@@ -583,10 +582,10 @@ case "$reply" in
        1) choice=`grep "$slash$reply"'$' "$dirList"`
           ;;
        0) echo "$NAME: $reply: not found" >&2
-          exit 8
+          exit 9
           ;;
        *) echo "$NAME: $reply: ambiguous" >&2
-          exit 9
+          exit 10
      esac
      ;;
   *)
@@ -594,7 +593,7 @@ case "$reply" in
           choice=`sed -n -e ${reply}p "$dirList"`
      else
           echo "$NAME: $reply: too big" >&2
-          exit 10
+          exit 11
      fi
 esac
 
@@ -625,8 +624,8 @@ else
 
           # re-call this script to refine choice
           #
-          choice2=`$NAME.$EXT $NAME -i2`
-          if [ $? -ne 4 ] ;then
+          choice2=`$NAME.$EXT $NAME -i2 $secondCmdLineChoice`
+          if [ $? -ne 6 ] ;then
                # ls will have been done by the above call, or there is an
                # error message we don't want to mask
                #
