@@ -1,8 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 #
 # cdm.sh -  `cd' command with menu
 #
-# Sat Dec 10 17:44:58 GMT 2022
+# Tue May 2 11:17:45 BST 2023
 #
 
 
@@ -190,20 +190,19 @@ usage(){
 	Usage: $NAME [-t]           select a directory from the menu
 	       $NAME [-t] choice    select a directory without seeing a menu
 	       $NAME [-t] ch1 ch2   select a directory without seeing two menus
-	       $NAME -i [-a]        select from the current directory only
-	       $NAME -r [-Aa]       rebuild the default menu
+	       $NAME -i [-aH]       select from the current directory only
+	       $NAME -r [-aH]       rebuild the default menu
 	       eval \`$NAME.$EXT -f\`   add the calling functions to the shell
 
 	Options:
-	       -A   include skipped directories by ignoring
-	               $SKIP and any $LIST files
-	       -a   include hidden directories
-	       -f   generate the calling function
-	       -h   display this help and exit
-	       -i   generate a temporary menu from the current directory
-	               (implies -A and -t)
-	       -r   rebuild the default menu
-	       -t   do not remember the chosen directory
+	  -h   display this help and exit
+	  -a   include skipped directories by ignoring
+	          $SKIP and any $LIST files
+	  -f   generate the calling functions
+	  -H   include hidden directories
+	  -i   generate a temporary menu from the current directory (implies -t)
+	  -r   rebuild the default menu
+	  -t   do not remember the chosen directory
 	!
   exit 2
 }
@@ -225,11 +224,25 @@ mkTmp(){
 }
 
 
-# mkDirs - re-build directory list and menu
+# mkTree - build directory tree
 #
-mkDirs(){
+mkTree(){
 
-  # Build argument of dirs for tree command to skip
+  # sed commands to remove tree command's escaped spaces and condense slightly
+  #
+  edit='               # this initial newline is needed
+      s?\\ ? ?g
+      s/|-- /+-/
+      s/`-- /`-/
+      s/|   /| /g
+      s/    /  /g'
+
+  # if we are going to deal with .cdmList files add a command to insert
+  # a trailing slash (needed later for appending)
+  #
+  test "$all" -o "$immediate" || edit='s?$?/?'"$edit"
+
+  # build list of dirs for tree command to skip
   #
   if [ \( "$call2" \) -o \( ! "$all" \) ] && [ -f "$SKIP" ] ;then
        skip=$(tr '\n' '|' < "$SKIP" |
@@ -237,107 +250,116 @@ mkDirs(){
                      s/.$//')
   fi
 
-  # build tree of all possible directories
+  # build tree of all directories and massage it
   #
   tree $hidden $skip -df --noreport --charset '' |
+    sed "$edit"
+}
 
-  # if not had -a option, build list of edits from user's customisation files
-  # otherwise, just build the tree without edits
+
+# buildEdits - build edits to cater for any .cdmList files
+#
+buildEdits(){
+
+  # add delete commands for contents of dirs with a .cdmList file
   #
-  if [ "$all" ] ;then
-       # edit tree lines to: remove tree's escapes from spaces
-       #                     and condense slightly
-       sed 's?\\ ? ?g
-            s/|-- /+-/
-            s/`-- /`-/
-            s/|   /| /g
-            s/    /  /g' > $TMP/prunedDirs
+  find . -name "$LIST" |
+    sed 's/^/\\?[+`]-\\/
+         s/[^/]*$/.?d/' > $TMP/edits
 
-  else # edit tree lines to: add a trailing slash (needed for appending)
-       #                     remove tree's escapes from spaces
-       #                     and condense slightly
-       sed 's?$?/?
-            s?\\ ? ?g
-            s/|-- /+-/
-            s/`-- /`-/
-            s/|   /| /g
-            s/    /  /g' > $TMP/allDirs
+  # add append commands for dirs with a non-empty .cdmList file
+  #
+  find . -name "$LIST" -size +1c |
+    sed 's?/[^/]*$??' |          # remove ".cdmList"
 
-       # start building edits; begin by adding delete commands for
-       # contents of dirs with a .cdmList file
-       #
-       find . -name "$LIST" |
-         sed 's/^/\\?[+`]-\\/
-              s/[^/]*$/.?d/' > $TMP/edits
-
-       # add append commands for dirs with a non-empty .cdmList file
-       #
-       find . -name "$LIST" -size +1c |
-         sed 's?/[^/]*$??' |          # remove ".cdmList"
-
-           # find dir's entry, output its name and display its .cdmList,
-           # (allowing for use of "'-" instead of "`-")
-           #
-           xargs -I {} echo "grep -- '[+\`]-{}/$' $TMP/allDirs; " \
+      # find dir's entry, output its name and display its .cdmList,
+      # (allowing for use of "'-" instead of "`-")
+      #
+      xargs -I {} echo "grep -- '[+\`]-{}/$' $TMP/allDirs; " \
                                                    "tr \"'\" '\`' < {}/$LIST" |
-             sh |
-               awk '
-                 # do the +-./dir/ for the location of the non-empty .cdmList
-                 #
-                 /^[| ]*[+`]-\./ {
-                      if (savedLine)
-                           print( savedLine)
-                      savedLine = sprintf( "\\?%s$?a", $0)
-                      path = $0
-                      sub( /.*\.\//, "./", path)
-                      indent1 = $0
-                      i2PrevLen = 2
+        sh |
+          alignCdmLists >> $TMP/edits
 
-                      # if not last in parent dir
-                      #
-                      if ($0 ~ /+-\.\//)
-                           sub( /+-\.\/.*/, "| ", indent1)
-                      else
-                           sub( /`-\.\/.*/, "  ", indent1)
-                 }
-                 # do the lines in the .cdmList file
-                 #
-                 !/^[| ]*[+`]-\./ {
-                      print( savedLine "\\")
-                      dirStart = match($0, "-") + 1
-                      indent2 = substr($0, 1, dirStart -1)
-                      i2Len = length( indent2)
-                      if (i2Len > i2PrevLen) {       # assuming by 2!
-                           path = path prevDir "/"
-                      } else if (i2Len < i2PrevLen) {
-                           drops = (i2PrevLen - i2Len) / 2
-                           for (n = 0; n < drops; n++)
-                                sub( /[^/]+\/$/, "", path)
-                      }
-                      dir = substr($0, dirStart)
-                      savedLine = sprintf( "%s", indent1 indent2 path dir)
-                      prevDir = dir
-                      i2PrevLen = i2Len
-                 }
-                 END {
-                      if (savedLine)
-                           print( savedLine)
-                 }
-               ' >> $TMP/edits
+  # add command to remove the trailing slash added above
+  #
+  echo 's?/$??' >> $TMP/edits
+}
 
-       # add command to remove the trailing slash added above
+
+# alignCdmLists - align .cdmList contents with dir names
+#
+alignCdmLists(){
+  awk '# Example of the input:
        #
-       echo 's?/$??' >> $TMP/edits
+       #+-./radio/
+       #`-FRESHMEAT
+       #+-./familyPhotos/
+       #+-photos
+       #`-slides
 
-       # apply edit(s)
+       # do the +-./dir/ for the location of the non-empty .cdmList
        #
+       /^[| ]*[+`]-\./ {
+            if (savedLine)
+                 print( savedLine)
+            savedLine = sprintf( "\\?%s$?a", $0)
+            path = $0
+            sub( /.*\.\//, "./", path)
+            indent1 = $0
+            i2PrevLen = 2
+
+            # if not last in parent dir
+            #
+            if ($0 ~ /+-\.\//)
+                 sub( /+-\.\/.*/, "| ", indent1)
+            else
+                 sub( /`-\.\/.*/, "  ", indent1)
+       }
+       # do the lines in the .cdmList file
+       #
+       !/^[| ]*[+`]-\./ {
+            print( savedLine "\\")
+            dirStart = match($0, "-") + 1
+            indent2 = substr($0, 1, dirStart -1)
+            i2Len = length( indent2)
+            if (i2Len > i2PrevLen) {       # assuming by 2!
+                 path = path prevDir "/"
+            } else if (i2Len < i2PrevLen) {
+                 drops = (i2PrevLen - i2Len) / 2
+                 for (n = 0; n < drops; n++)
+                      sub( /[^/]+\/$/, "", path)
+            }
+            dir = substr($0, dirStart)
+            savedLine = sprintf( "%s", indent1 indent2 path dir)
+            prevDir = dir
+            i2PrevLen = i2Len
+       }
+       END {
+            if (savedLine)
+                 print( savedLine)
+       }'
+}
+
+
+# mkDirs - re-build directory list and menu
+#
+mkDirs(){
+  if [ "$all" -o "$immediate" ] ;then
+       mkTree > $TMP/prunedDirs
+  else
+       mkTree > $TMP/allDirs
+
+       # deal with .cdmList files (if any)
+       #
+       buildEdits
        sed -f $TMP/edits $TMP/allDirs > $TMP/prunedDirs
   fi
 
-  # put seeded dirs at top of dir list and menu
-  #
   > "$dirList"
   > "$menu"
+
+  # put seeded dirs at top of main dir list and menu
+  #
   if [ ! "$immediate" ] && [ -f "$SEED" ] ;then
        cat "$SEED" >> "$dirList"
        cat "$SEED" >> "$menu"
@@ -355,7 +377,7 @@ mkDirs(){
        root=home
   fi
 
-  # remove full pathnames from menu, label tree root
+  # remove full pathnames from menu; label tree root
   # and convert tree commands's "`-" back to "'-" (looks better)
   #
   sed '\?^\.$?s??('$root')?
@@ -411,7 +433,6 @@ doMenu(){
             reply=`echo $reply | sed 's/-t  *//'`
             saveCd= ;;
        esac
-
   fi
 }
 
@@ -435,10 +456,10 @@ instruct(){
 
 	     eval \`$NAME.$EXT -f\`
 
-	That will install a function called $NAME which calls $NAME.$EXT and
-	changes directory.  The eval statement should be added to one of your
-	shell startup files to ensure every shell you start gets the $NAME
-	function defined.
+	That will install functions called $NAME and $ALIAS which call $NAME.$EXT
+	and change directory.  The eval statement should be added to one of your
+	shell startup files to ensure every shell you start gets the $NAME and
+	$ALIAS functions defined.
 
 	!
     exit 7
@@ -461,22 +482,18 @@ badOpt(){
 #
 vetOptions(){
   if [ "$immediate" ] && [ "$build" ] ;then
-       echo "$NAME: warning: ignoring -r with -i" >&2
-  fi
-  if [ "$immediate" ] && [ "$all" ] ;then
-       echo "$NAME: warning: -i implies -A" >&2
-       all=
-  fi
-  if [ "$all" ] && [ ! "$build" ] ;then
-       echo "$NAME: warning: ignoring -A without -r" >&2
-  fi
+       echo
+       echo "$NAME: warning: ignoring -r with -i"
+       echo
+  fi >&2
   if [ "$hidden" ] && [ ! "$build" ] && [ ! "$immediate" ] ;then
-       echo "$NAME: warning: ignoring -a without -i or -r" >&2
-  fi
+       echo
+       echo "$NAME: warning: ignoring -H without -i or -r"
+       echo
+  fi >&2
   if [ "$immediate" ] ;then
        saveCd=         # -i implies: -t
        build=          # -i implies: no -r
-       all=true        # -i implies: -A
   fi
 }
 
@@ -513,16 +530,16 @@ saveCd=true
 
 # handle remaining options
 #
-while getopts ':Aahirt2' option ;do
+while getopts ':Hahirt2' option ;do
      case $option in
-       A) all=true ;;
-       a) hidden='-a' ;;      # option to tree command
        h) usage ;;
+       2) call2=true ;;       # -2 is for internal use, but would be harmless
+       a) all=true ;;
+       H) hidden='-a' ;;      # option to tree command
        i) immediate=true ;;
        r) build=true ;;
        t) saveCd= ;;
-       2) call2=true ;;       # -2 is for internal use, but is harmless
-      \?) badOpt "$OPTARG" ;;
+      \?) badOpt "$OPTARG"
      esac
 done
 shift `expr $OPTIND - 1`
@@ -547,14 +564,14 @@ fi
 
 #  build menu if needed
 #
-if [ "$build" ] ;then
-     cd
+if [ "$build" -o "$immediate" ] ;then
      mkTmp
-     mkDirs
-elif [ "$immediate" ] ;then
-     mkTmp
-     menu=$TMP/menu
-     dirList=$TMP/dirList
+     if [ "$build" ] ;then
+          cd
+     else
+          menu=$TMP/menu
+          dirList=$TMP/dirList
+     fi
      mkDirs
 fi
 
