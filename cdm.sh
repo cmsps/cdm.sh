@@ -2,13 +2,13 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Tue May 2 11:17:45 BST 2023
+# Wed Mar 12 17:32:02 GMT 2025
 #
 
 
 <<'______________D__O__C__U__M__E__N__T__A__T__I__O__N_____________'
 
-Copyright (C) 2024 Peter Scott - peterscott@pobox.com
+Copyright (C) 2025 Peter Scott - peterscott@pobox.com
 
 Licence
 -------
@@ -164,8 +164,11 @@ END_LINEMODE='(B'
 # myLs - display the chosen directory (you probably wish to customise this)
 #
 myLs(){
-  echo "`pwd`/"                  # $PWD didn't work fully in Solaris shell
-  echo "`pwd`/" | sed 's/./~/g'
+  echo $PWD/ |
+    sed "s?/home/cmsps?~?"
+  echo $PWD/ |
+    sed "s?$HOME?~?"'
+         s/./~/g'
   ls -FN
   if [ -d Bin ] ;then
        printf "\nBin/\n"
