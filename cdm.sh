@@ -2,7 +2,7 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Wed Mar 12 17:32:02 GMT 2025
+# Sun Dec 21 16:50:59 GMT 2025
 #
 
 
@@ -137,7 +137,7 @@ Problems
   (3) Names beginning with other line drawing characters or containing
       slashes will probably mess things up.
 
-  (4) Symbolic links are ignored.  This probably isn't a problem.
+  (4) Symbolic links are not followed.  This probably isn't a problem.
 
 
 ______________D__O__C__U__M__E__N__T__A__T__I__O__N_____________
@@ -234,6 +234,7 @@ mkTree(){
   # sed commands to remove tree command's escaped spaces and condense slightly
   #
   edit='               # this initial newline is needed
+      s/ -> .*//       # remove expansion of symbolic link
       s?\\ ? ?g
       s/|-- /+-/
       s/`-- /`-/
