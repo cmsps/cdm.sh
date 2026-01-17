@@ -2,13 +2,13 @@
 #
 # cdm.sh -  `cd' command with menu
 #
-# Sun Dec 21 16:50:59 GMT 2025
+# Sat Jan 17 13:56:31 GMT 2026
 #
 
 
 <<'______________D__O__C__U__M__E__N__T__A__T__I__O__N_____________'
 
-Copyright (C) 2025 Peter Scott - peterscott@pobox.com
+Copyright (C) 2026 Peter Scott - peterscott@pobox.com
 
 Licence
 -------
@@ -165,7 +165,7 @@ END_LINEMODE='(B'
 #
 myLs(){
   echo $PWD/ |
-    sed "s?/home/cmsps?~?"
+    sed "s?$HOME?~?"
   echo $PWD/ |
     sed "s?$HOME?~?"'
          s/./~/g'
